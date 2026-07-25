@@ -1,0 +1,48 @@
+portfolio:
+  name: "Portafoglio Michele"
+  currency: EUR
+
+funds:
+
+  - name: "JPM Global Focus D Acc EUR"
+    isin: "LU0168343274"
+    value: 30142
+    benchmark:
+      name: "Amundi MSCI World Swap UCITS ETF EUR Acc"
+      isin: "LU1681043599"
+      weight: 100
+
+
+  - name: "Fidelity Euro Cash A Cap EUR"
+    isin: "LU0261953490"
+    value: 51330
+    benchmark:
+      name: "Amundi EUR Overnight Return UCITS ETF Acc"
+      isin: "FR0010510800"
+      weight: 100
+
+
+  - name: "Fonditalia Core 3 R"
+    isin: "LU0349158815"
+    value: 63476
+    benchmark:
+      name: "Benchmark composito"
+      components:
+
+        - name: "Vanguard FTSE All-World UCITS ETF Acc"
+          isin: "IE00BK5BQT80"
+          weight: 70
+
+        - name: "iShares Core Global Aggregate Bond UCITS ETF EUR Hedged Acc"
+          isin: "IE00BDBRDM35"
+          weight: 20
+
+        - name: "Amundi ETF €STR Daily UCITS ETF Acc"
+          isin: "FR0010510800"
+          weight: 10
+
+
+email:
+  recipients:
+    - "michele.mattinzoli.banca@gmail.com"
+    - "massimo.mattinzoli@gmail.com"
