@@ -1,71 +1,180 @@
 import pandas as pd
-import os
-from datetime import datetime
-from reportlab.lib.pagesizes import letter
+import yaml
+from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from datetime import datetime
+import os
 
-if not os.path.exists("data/performance.csv"):
-    print("❌ Errore: File data/performance.csv non trovato. Esegui prima performance.py!")
-    exit()
 
-df = pd.read_csv("data/performance.csv")
-
+# Cartella report
 os.makedirs("reports", exist_ok=True)
 
-today_str = datetime.now().strftime("%Y-%m-%d")
-pdf_path = f"reports/Portfolio_Report_{today_str}.pdf"
+
+# Lettura configurazione portafoglio
+with open("config/portfolio.yml", "r") as file:
+    portfolio = yaml.safe_load(file)
+
+
+# Lettura performance
+performance = pd.read_csv(
+    "data/performance.csv"
+)
+
+
+# Creazione PDF
+today = datetime.today().strftime("%Y-%m-%d")
+
+filename = f"reports/Portfolio_Report_{today}.pdf"
+
 
 doc = SimpleDocTemplate(
-    pdf_path,
-    pagesize=letter,
-    rightMargin=40, leftMargin=40,
-    topMargin=40, bottomMargin=40
+    filename,
+    pagesize=A4
 )
+
 
 styles = getSampleStyleSheet()
-story = []
 
-title_style = ParagraphStyle(
-    "ReportTitle",
-    parent=styles["Heading1"],
-    fontSize=20,
-    leading=24,
-    textColor=colors.HexColor("#1A365D"),
-    spaceAfter=12
+content = []
+
+
+# Titolo
+content.append(
+    Paragraph(
+        "Portfolio Report - Michele",
+        styles["Title"]
+    )
 )
 
-story.append(Paragraph("Report Performance Portafoglio", title_style))
-story.append(Paragraph(f"<b>Data Report:</b> {today_str}", styles["Normal"]))
-story.append(Spacer(1, 20))
+content.append(
+    Spacer(1, 20)
+)
 
-# Usiamo "EUR" al posto del simbolo dell'euro per evitare errori di encoding del font
-table_data = [["Strumento", "Prezzo (EUR)", "1 Sett (%)", "1 Mese (%)", "12 Mesi (%)"]]
 
-for _, row in df.iterrows():
-    name = str(row["name"])
-    price = f"{row['price']:.2f}" if pd.notna(row['price']) else "N/A"
-    r_1w = f"{row['return_1w']:.2f}%" if pd.notna(row['return_1w']) else "N/A"
-    r_1m = f"{row['return_1m']:.2f}%" if pd.notna(row['return_1m']) else "N/A"
-    r_1y = f"{row['return_1y']:.2f}%" if pd.notna(row['return_1y']) else "N/A"
-    
-    table_data.append([name, price, r_1w, r_1m, r_1y])
+# Data
+content.append(
+    Paragraph(
+        f"Data report: {today}",
+        styles["Normal"]
+    )
+)
 
-t = Table(table_data, colWidths=[200, 80, 80, 80, 80])
-t.setStyle(TableStyle([
-    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1A365D")),
-    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-    ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-    ('FONTSIZE', (0, 0), (-1, -1), 10),
-    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor("#F7FAFC")),
-    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
-]))
+content.append(
+    Spacer(1, 20)
+)
 
-story.append(t)
 
-doc.build(story)
-print(f"✅ PDF generato con successo: {pdf_path}")
+# Valore totale
+total_value = sum(
+    fund["value"]
+    for fund in portfolio["funds"]
+)
+
+
+content.append(
+    Paragraph(
+        f"Valore totale portafoglio: {total_value:,.2f} EUR",
+        styles["Heading2"]
+    )
+)
+
+content.append(
+    Spacer(1, 20)
+)
+
+
+# Tabella fondi
+
+table_data = [
+    [
+        "Fondo",
+        "Valore (€)",
+        "Peso (%)"
+    ]
+]
+
+
+for fund in portfolio["funds"]:
+
+    weight = (
+        fund["value"] /
+        total_value *
+        100
+    )
+
+    table_data.append(
+        [
+            fund["name"],
+            f"{fund['value']:,.2f}",
+            f"{weight:.2f}"
+        ]
+    )
+
+
+table = Table(table_data)
+
+
+table.setStyle(
+    TableStyle(
+        [
+            ("GRID",(0,0),(-1,-1),0.5,None),
+            ("ALIGN",(1,1),(-1,-1),"RIGHT")
+        ]
+    )
+)
+
+
+content.append(table)
+
+content.append(
+    Spacer(1,30)
+)
+
+
+# Performance
+
+content.append(
+    Paragraph(
+        "Performance",
+        styles["Heading2"]
+    )
+)
+
+
+perf_table = [
+    list(performance.columns)
+]
+
+
+for _, row in performance.iterrows():
+
+    perf_table.append(
+        [
+            str(x)
+            for x in row.values
+        ]
+    )
+
+
+table2 = Table(perf_table)
+
+
+table2.setStyle(
+    TableStyle(
+        [
+            ("GRID",(0,0),(-1,-1),0.5,None)
+        ]
+    )
+)
+
+
+content.append(table2)
+
+
+doc.build(content)
+
+
+print(
+    f"Report creato: {filename}"
+)
