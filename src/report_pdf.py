@@ -6,17 +6,14 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-# 1. Verifica che i dati esistano
 if not os.path.exists("data/performance.csv"):
     print("❌ Errore: File data/performance.csv non trovato. Esegui prima performance.py!")
     exit()
 
 df = pd.read_csv("data/performance.csv")
 
-# Assicurati che la cartella reports esista
 os.makedirs("reports", exist_ok=True)
 
-# Nome del file PDF di output con la data di oggi
 today_str = datetime.now().strftime("%Y-%m-%d")
 pdf_path = f"reports/Portfolio_Report_{today_str}.pdf"
 
@@ -30,7 +27,6 @@ doc = SimpleDocTemplate(
 styles = getSampleStyleSheet()
 story = []
 
-# Titolo del Report
 title_style = ParagraphStyle(
     "ReportTitle",
     parent=styles["Heading1"],
@@ -39,14 +35,14 @@ title_style = ParagraphStyle(
     textColor=colors.HexColor("#1A365D"),
     spaceAfter=12
 )
+
 story.append(Paragraph("Report Performance Portafoglio", title_style))
 story.append(Paragraph(f"<b>Data Report:</b> {today_str}", styles["Normal"]))
 story.append(Spacer(1, 20))
 
-# Intestazione Tabella
-table_data = [["Strumento", "Prezzo (€)", "1 Sett (%)", "1 Mese (%)", "12 Mesi (%)"]]
+# Usiamo "EUR" al posto del simbolo dell'euro per evitare errori di encoding del font
+table_data = [["Strumento", "Prezzo (EUR)", "1 Sett (%)", "1 Mese (%)", "12 Mesi (%)"]]
 
-# Popolamento dati
 for _, row in df.iterrows():
     name = str(row["name"])
     price = f"{row['price']:.2f}" if pd.notna(row['price']) else "N/A"
@@ -56,7 +52,6 @@ for _, row in df.iterrows():
     
     table_data.append([name, price, r_1w, r_1m, r_1y])
 
-# Stile Tabella
 t = Table(table_data, colWidths=[200, 80, 80, 80, 80])
 t.setStyle(TableStyle([
     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1A365D")),
@@ -72,6 +67,5 @@ t.setStyle(TableStyle([
 
 story.append(t)
 
-# Generazione PDF
 doc.build(story)
 print(f"✅ PDF generato con successo: {pdf_path}")
