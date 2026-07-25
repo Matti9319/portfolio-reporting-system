@@ -8,6 +8,9 @@ if not os.path.exists("data/prices.csv"):
 
 prices = pd.read_csv("data/prices.csv", parse_dates=["Date"])
 
+# Converte la colonna Close in valore numerico (forzando ad altezze i testi errati a NaN)
+prices["Close"] = pd.to_numeric(prices["Close"], errors="coerce")
+
 def calculate_return(series, days):
     """Calcola il rendimento a X giorni gestendo i dati mancanti."""
     if len(series) < 2:
@@ -16,7 +19,7 @@ def calculate_return(series, days):
     # Prende il valore di N giorni fa o il più vecchio disponibile
     start_idx = max(0, len(series) - days)
     start = series.iloc[start_idx]
-    if start == 0 or pd.isna(start):
+    if pd.isna(start) or start == 0 or pd.isna(end):
         return None
     return ((end - start) / start) * 100
 
